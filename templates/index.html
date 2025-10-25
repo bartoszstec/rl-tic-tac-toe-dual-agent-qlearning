@@ -10,12 +10,12 @@
     <div class="container">
         <button class ="box" id="modeToggle">Game Mode: PvP</button>
         <button class ="box blink" style="display: none;" id="startButton">Start a Game</button>
+        <a href="{{ url_for('history') }}">
+            <button class ="box" id="history">Show game history</button>
+        </a>
     </div>
 
-    <h1>links:</h1>
-    <a href="{{ url_for('history') }}">
-        <button class ="box" id="history">Show game history</button>
-    </a>
+
 
     <canvas id="canvas1"></canvas>
 
