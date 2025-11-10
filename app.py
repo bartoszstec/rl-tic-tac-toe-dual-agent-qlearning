@@ -77,6 +77,7 @@ def ai_move():
     else:
         return jsonify({"error": "Unknown strategy"}), 400
 
+    current_player = game.current_player  # storing current_player, this is player that is going to move
     board = game.board                      # storing current board to variable
     move = trained_move(board, Q_table)     # AI agent choosing the best possible move
 
@@ -86,6 +87,7 @@ def ai_move():
         game.make_move(row, col)    # make move is main game class method that involves checking if square(represented as row, col) is taken by any player,
                                     # saving done move to game's board, manages game value properties to represent state of game through values as:
                                     # (game_over, winner, winning_line, current_player)
+
     except ValueError as e:
         # Return error statement
         return jsonify({"error": str(e)}), 400
@@ -94,16 +96,25 @@ def ai_move():
     winning_line = game.winning_line    # default = None, coordinates of winning line
     draw = False                        # a flag indicating a tie
 
-    current_player = game.current_player    # storing current_player, this is player that just moved
     if game.check_full_board():             # checking is game draw/over or has to be continued
         draw = True
     if game.game_over:
+        #update_q_on_game_end()
+        # wywołanie metody w modelu która zaktualizuje stan Q-tabeli odpowiedniego agenta przy końcu gry
         game.reset_game()
     else:
+        #update_q_on_move()
+        # wywołanie metody w modelu która zaktualizuje stan Q-tabeli o nagrody ongoing
         game.switch_player()    # method switching current_player from X to O and from O to X, switched player is the next player's move
                                 # WARNING: has to be executed after storing current_player from game class
 
-    return jsonify({"status": "AI moved", "current_player": current_player, "winner": winner, "winning_line": winning_line, "draw": draw, "aiRow": row, "aiCol": col})
+    return jsonify({"status": "AI moved",
+                    "current_player": current_player,
+                    "winner": winner,
+                    "winning_line": winning_line,
+                    "draw": draw,
+                    "aiRow": row,
+                    "aiCol": col})
 
 @app.route('/player-move', methods = ['POST'])
 def player_move():
@@ -140,7 +151,11 @@ def player_move():
         game.switch_player()    # method switching current_player from X to O and from O to X, switched player is the next player's move
                                 # WARNING: has to be executed after storing current_player from game class
 
-    return jsonify({"status": "Player moved", "current_player": current_player, "winner": winner, "winning_line": winning_line, "draw": draw})
+    return jsonify({"status": "Player moved",
+                    "current_player": current_player,
+                    "winner": winner,
+                    "winning_line": winning_line,
+                    "draw": draw})
 
 if __name__ == "__main__":
     app.run()

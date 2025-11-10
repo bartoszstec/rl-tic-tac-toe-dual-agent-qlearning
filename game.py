@@ -52,11 +52,12 @@ class Game:
         self.winner = None
         self.move_log = []
 
-    def save_move_to_log(self, row, col):
+    def save_move_to_log(self, row, col, current_board):
         self.move_log.append({
             "player": self.current_player,
             "position": [row, col],
-            "board": copy.deepcopy(self.board)
+            "board": current_board,
+            "next_board": copy.deepcopy(self.board)
         })
 
     def save_game_result(self, winner):
@@ -89,14 +90,15 @@ class Game:
         if b[row][col] is not None:
             raise ValueError("The field is already occupied!")
         else:
+            current_board = copy.deepcopy(self.board)
             b[row][col] = self.current_player
-            self.save_move_to_log(row, col)
+            self.save_move_to_log(row, col, current_board)
             self.winning_line = self.get_winning_line()
             if self.winning_line:
                 self.game_over = True
                 self.winner = self.current_player
-                self.save_game_result(self.winner)
+                #self.save_game_result(self.winner) #commented due to massive games called while training
             elif self.check_full_board():
                 self.game_over = True
-                self.save_game_result(self.winner)
+                #self.save_game_result(self.winner) #commented due to massive games called while training
 

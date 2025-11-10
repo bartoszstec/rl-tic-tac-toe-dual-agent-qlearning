@@ -57,10 +57,10 @@ When the Q-table presents multiple moves with the same highest Q-value, the agen
 This chart illustrates the performance improvement of the learning agents throughout the training process. The metric is based on periodic evaluations—conducted every few thousand training episodes—where the agents competed against a randomized opponent strategy. The trend line demonstrates the agents' increasing proficiency over time.
 
 Smoothed Performance:
-![Learning Graph](training_progress.png)
+![Learning Graph](training_progress_best.png)
 
 Raw Training Data:
-![Learning Graph](training_progress_raw.png)
+![Learning Graph](training_progress_raw_best.png)
 
 ## 🛠️ Project structure
 - **Backend (Python):**  

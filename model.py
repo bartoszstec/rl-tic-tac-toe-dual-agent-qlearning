@@ -4,6 +4,7 @@ import pickle
 import json, os
 import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
+from game import Game
 
 # -----------------------------
 # AUXILIARY FUNCTIONS
@@ -40,28 +41,6 @@ def random_move(board):
         return possible_moves[np.random.randint(len(possible_moves))]
     else:
         return None
-
-def is_game_over(board):
-    winning_lines = [
-        [(0, 0), (0, 1), (0, 2)],
-        [(1, 0), (1, 1), (1, 2)],
-        [(2, 0), (2, 1), (2, 2)],
-        [(0, 0), (1, 0), (2, 0)],
-        [(0, 1), (1, 1), (2, 1)],
-        [(0, 2), (1, 2), (2, 2)],
-        [(0, 0), (1, 1), (2, 2)],
-        [(0, 2), (1, 1), (2, 0)]
-    ]
-
-    for line in winning_lines:
-        values = []
-        for (r, c) in line:
-            values.append(board[r][c])
-        if values[0] is not None and values[0] == values[1] and values[1] == values[2]:
-            return True, values[0]
-    if is_board_full(board):            # WIN -> True, winning line
-        return True, 'draw'             # DRAW -> True, 'draw'
-    return False, None                  # STILL PLAYING -> None
 
 def is_board_full(board):
     return all(element is not None for row in board for element in row)
@@ -119,12 +98,6 @@ def choose_action(board, Q_table, exploration_rate):
 
     return action
 
-def board_next_state(board, cell, player):
-    next_state = board.copy()                      #create a copy of current board state
-    next_state[cell[0], cell[1]] = player
-    return next_state
-
-
 # -----------------------------
 # UPDATE Q
 # -----------------------------
@@ -145,8 +118,9 @@ def update_q_table(Q_table, state, action, next_state, reward):
 # -----------------------------
 def train_agents(epsilon_min, epsilon_max, decay_rate):
     Q_attack, Q_defence = {}, {}
+    game = Game() # creating an instance of the Game class for training
 
-    # Inicjalizacja danych do wykresów
+    # Initializing data for charts
     stats = {
         "attack": {"wins": [], "draws": [], "losses": []},
         "defence": {"wins": [], "draws": [], "losses": []}
@@ -155,12 +129,12 @@ def train_agents(epsilon_min, epsilon_max, decay_rate):
     evaluation_games = 1000
     checkpoint_interval = num_episodes // 10
 
-    # Przygotowanie wykresu
+    # Preparing the chart
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
     plt.ion()
     fig.suptitle("Agents learning evaluation vs random enemy")
 
-    # Konfiguracja wykresów
+    # Chart configuration
     axes_config = [
         (ax1, "Offensive agent (X)", "attack"),
         (ax2, "Defensive agent (O)", "defence")
@@ -180,7 +154,7 @@ def train_agents(epsilon_min, epsilon_max, decay_rate):
         ax.legend()
 
     def update_plots():
-        """Aktualizuje dane na wykresach bez pełnego przerysowywania"""
+        """Updates data on charts without a complete redraw"""
         x = np.array(episodes_checkpoints)
 
         for ax, title, agent_type in axes_config:
@@ -188,13 +162,13 @@ def train_agents(epsilon_min, epsilon_max, decay_rate):
             if len(x) == 0 or len(stats_data["wins"]) == 0:
                 continue
 
-            # Aktualizuj dane linii
+            # Update line data
             for result_type in ['wins', 'draws', 'losses']:
                 y_data = stats_data[result_type]
                 min_len = min(len(x), len(y_data))
                 lines[agent_type][result_type].set_data(x[:min_len], y_data[:min_len])
 
-            # Dostosuj zakres osi
+            # Adjust axis range
             ax.relim()
             ax.autoscale_view()
 
@@ -203,30 +177,24 @@ def train_agents(epsilon_min, epsilon_max, decay_rate):
         fig.canvas.flush_events()
 
     def evaluate_and_record(episode):
-        """Wykonuje ewaluację i zapisuje wyniki"""
+        """Performs evaluation and records results"""
         wins_a, draws_a, losses_a = simulate_games("attack", Q_attack, evaluation_games)
         wins_d, draws_d, losses_d = simulate_games("defence", Q_defence, evaluation_games)
 
-        # Zapisz wyniki ataku
+        # Record the results of the attack
         stats["attack"]["wins"].append((wins_a / evaluation_games) * 100)
         stats["attack"]["draws"].append((draws_a / evaluation_games) * 100)
         stats["attack"]["losses"].append((losses_a / evaluation_games) * 100)
 
-        # Zapisz wyniki obrony
+        # Record the defense results
         stats["defence"]["wins"].append((wins_d / evaluation_games) * 100)
         stats["defence"]["draws"].append((draws_d / evaluation_games) * 100)
         stats["defence"]["losses"].append((losses_d / evaluation_games) * 100)
 
         episodes_checkpoints.append(episode)
 
-    # Główna pętla treningowa
+    # Main training loop
     for episode in range(num_episodes):
-        board = np.array([[None, None, None],
-                          [None, None, None],
-                          [None, None, None]])
-
-        current_player = 'X'
-        game_over = False
         last_moves = {"X": None, "O": None}
 
         # Set exploration rate for this episode
@@ -236,82 +204,79 @@ def train_agents(epsilon_min, epsilon_max, decay_rate):
         if episode % checkpoint_interval == 0 or episode == num_episodes - 1:
             evaluate_and_record(episode)
             update_plots()
-            plt.pause(0.05)  # Krótsza pauza
+            plt.pause(0.05)
 
-        while not game_over:
-            Q = Q_attack if current_player == 'X' else Q_defence
+        game.reset_game()
+
+        while not game.game_over:
+            Q = Q_attack if game.current_player == 'X' else Q_defence
 
             # Choose an action
-            action = choose_action(board, Q, exploration_rate)
-            state_str = board_to_string(board)
-            next_board = board_next_state(board, action, current_player)
-            next_state_str = board_to_string(next_board)
+            action = choose_action(game.board, Q, exploration_rate)
 
-            # remember the player's last move
-            last_moves[current_player] = (state_str, action, next_state_str)
+            # Save state before move
+            state_before = board_to_string(game.board)
 
             # Make the chosen move
             row, col = action
-            board[row, col] = current_player
+            game.make_move(row, col)
 
-            # Check if the game is over
-            game_over, winner = is_game_over(board)
+            # Save state after move
+            state_after = board_to_string(game.board)
 
-            if game_over:
-                if winner == 'X':
+            # remember the player's last move
+            last_moves[game.current_player] = (state_before, action, state_after)
+
+
+            if game.game_over:
+                if game.winner == 'X':
                     update_q_table(Q_attack, *last_moves['X'], reward=1)
                     update_q_table(Q_defence, *last_moves['O'], reward=-1)
-                elif winner == 'O':
+                elif game.winner == 'O':
                     update_q_table(Q_attack, *last_moves['X'], reward=-1)
                     update_q_table(Q_defence, *last_moves['O'], reward=1)
                 else:  # draw
                     update_q_table(Q_attack, *last_moves['X'], reward=0)
                     update_q_table(Q_defence, *last_moves['O'], reward=1)
-            else:
-                # ongoing reward
-                ongoing_reward = -0.5 if current_player == 'X' else 0
-                update_q_table(Q, state_str, action, next_state_str, ongoing_reward)
+            game.switch_player()
 
-            current_player = 'O' if current_player == 'X' else 'X'
-
-    # WYGŁADZANIE TYLKO PRZY ZAPISIE
+    # SMOOTHING ONLY ON WRITE
     def smooth_final_plot():
-        """Wygładza wykres tylko dla finalnego zapisu"""
+        """Smooths the graph only for the final output."""
 
         x_original = np.array(episodes_checkpoints)
 
         for ax, title, agent_type in axes_config:
             stats_data = stats[agent_type]
-            if len(x_original) < 4:  # Za mało punktów do wygładzenia
+            if len(x_original) < 4:  # Not enough points to smooth
                 continue
 
             for result_type in ['wins', 'draws', 'losses']:
                 y_original = np.array(stats_data[result_type])
 
-                # Tworzymy gęstsze punkty dla płynnego wykresu
+                # Denser points for a smoother graph
                 x_smooth = np.linspace(x_original.min(), x_original.max(), 300)
 
-                # Używamy interpolacji spline
+                # We use spline interpolation
                 spline = make_interp_spline(x_original, y_original, k=3)
                 y_smooth = spline(x_smooth)
 
-                # Aktualizujemy linię wygładzonymi danymi
+                # Update the line with the smoothed data
                 lines[agent_type][result_type].set_data(x_smooth, y_smooth)
 
             ax.relim()
             ax.autoscale_view()
 
-        # Na końcu: wygładź i zapisz
 
     smooth_final_plot()
     plt.ioff()
     fig.savefig("training_progress.png", dpi=200, bbox_inches="tight")
 
-    # Dodatkowo: zapisz też wersję z surowymi danymi
+    # Additionally: save the raw data version too
     fig_raw, (ax1_raw, ax2_raw) = plt.subplots(1, 2, figsize=(12, 5))
     fig_raw.suptitle("Agents learning evaluation vs random enemy (Raw Data)")
 
-    # Rysuj surowe dane na drugim wykresie
+    # Plot raw data on a second graph
     for ax, title, agent_type in [(ax1_raw, "Offensive agent (X)", "attack"),
                                   (ax2_raw, "Defensive agent (O)", "defence")]:
         ax.set_title(title)
@@ -396,19 +361,12 @@ def trained_move(board, Q_table):
     return possible_moves[best_move_index]
 
 # -----------------------------
-# PERFORM LEARNING MOVE
-# -----------------------------
-def learning_move(board, Q_table):
-    # strategy dependent move and update of Q_table by playing with human player
-    pass #return action
-
-
-# -----------------------------
 # EVALUATE MODEL
 # -----------------------------
 def simulate_games(purpose, model, games=1000):
     wins, draws, losses = 0, 0, 0
     Q_table = model
+    game = Game()
 
     if purpose == 'attack':
         agent_player = 'X'
@@ -418,28 +376,25 @@ def simulate_games(purpose, model, games=1000):
         return print("Unknown evaluate purpose, evaluation process breaking...")
 
     for _ in range(games):
-        board = np.array([[None] * 3 for _ in range(3)])
-        current_player = 'X'
-        game_over = False
-        winner = None
-
-        while not game_over:
-            if current_player == agent_player:  # agent turn
-                move = trained_move(board, Q_table)
+        game.reset_game()
+        while not game.game_over:
+            if game.current_player == agent_player:  # agent turn
+                move = trained_move(game.board, Q_table)
             else:  # random opponent
-                possible = list_possible_moves(board)
+                possible = list_possible_moves(game.board)
                 move = random.choice(possible)
 
-            board[move] = current_player
-            game_over, winner = is_game_over(board)
-            current_player = 'O' if current_player == 'X' else 'X'
+            row, col = move
+            game.make_move(row, col)
+            game.switch_player()
 
-        if winner == agent_player:
+        if game.winner == agent_player:
             wins += 1
-        elif winner == 'draw':
+        elif game.winner is None:
             draws += 1
         else:
             losses += 1
+
     return wins, draws, losses
 
 def evaluate(purpose, model, games=1000):
@@ -489,6 +444,8 @@ if __name__ == "__main__":
         save_model(Qd, "q_table_D.pkl")
         evaluate("attack", Qa, 10000)
         evaluate("defence", Qd, 10000)
+    evaluate("attack", Qa, 10000)
+    evaluate("defence", Qd, 10000)
 
 
 
