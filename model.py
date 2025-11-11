@@ -42,9 +42,6 @@ def random_move(board):
     else:
         return None
 
-def is_board_full(board):
-    return all(element is not None for row in board for element in row)
-
 
 # -----------------------------
 # Q-learning PARAMS
