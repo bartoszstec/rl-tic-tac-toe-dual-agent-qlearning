@@ -11,8 +11,8 @@ app.secret_key = 'BAD_SECRET_KEY'
 games = {}  # Main server dictionary with game state keys and values,
             # dictionary: key = session_id, value = Game object
 
-Q_ATTACK = load_model("q_table_A_best.pkl")      # loading Q_table to offensive strategy
-Q_DEFENCE = load_model("q_table_D_best.pkl")     # loading Q_table to defensive strategy
+Q_ATTACK = None #load_model("q_table_A_best.pkl")      # loading Q_table to offensive strategy
+Q_DEFENCE = None #load_model("q_table_D_best.pkl")     # loading Q_table to defensive strategy
 
 def generate_unique_id():
     return str(uuid.uuid4()) # generates a random unique UUID version 4
