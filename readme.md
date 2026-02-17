@@ -5,7 +5,7 @@ This project re-imagines the classic Tic-Tac-Toe experience by leveraging **Rein
 The core technical distinction is the deployment of **two specialized Q-Learning models**: a high-win-rate **Offensive Agent** and a risk-minimizing **Defensive Agent**. This dual-agent architecture demonstrates advanced proficiency in custom RL training, model specialization, and strategic policy design.
 
 ## 🎮 Try it Out 
-See demo: [DEMO](https://tic-tac-toe-gze4anbeg6fkewhk.northeurope-01.azurewebsites.net/)
+See demo: [DEMO](https://tic-tac-toe-cafkcdgbbrbzcnbt.northeurope-01.azurewebsites.net)
 
 ## ✨ Functionalities
 - **PvP** Mode – classic two-player game.  
