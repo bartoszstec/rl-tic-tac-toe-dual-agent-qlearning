@@ -4,8 +4,9 @@ This project re-imagines the classic Tic-Tac-Toe experience by leveraging **Rein
 
 The core technical distinction is the deployment of **two specialized Q-Learning models**: a high-win-rate **Offensive Agent** and a risk-minimizing **Defensive Agent**. This dual-agent architecture demonstrates advanced proficiency in custom RL training, model specialization, and strategic policy design.
 
-## 🎮 Try it Out 
-See demo: [DEMO](https://tic-tac-toe-gze4anbeg6fkewhk.northeurope-01.azurewebsites.net/)
+## Short demonstration video of classification model feature
+[![Watch the video](github_assets/tic_tac_toe_yt_thumbnail.png)](https://youtu.be/Wb6OsJ4ek9Q)
+
 
 ## ✨ Functionalities
 - **PvP** Mode – classic two-player game.  
@@ -57,10 +58,10 @@ When the Q-table presents multiple moves with the same highest Q-value, the agen
 This chart illustrates the performance improvement of the learning agents throughout the training process. The metric is based on periodic evaluations—conducted every few thousand training episodes—where the agents competed against a randomized opponent strategy. The trend line demonstrates the agents' increasing proficiency over time.
 
 Smoothed Performance:
-![Learning Graph](training_progress_best.png)
+![Learning Graph](github_assets/training_progress_best.png)
 
 Raw Training Data:
-![Learning Graph](training_progress_raw_best.png)
+![Learning Graph](github_assets/training_progress_raw_best.png)
 
 ## 🛠️ Project structure
 - **Backend (Python):**  
